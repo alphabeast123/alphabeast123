@@ -1,0 +1,212 @@
+-- Create the Screen GUI
+local player = game.Players.LocalPlayer
+local userInputService = game:GetService("UserInputService")
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player.PlayerGui
+
+-- Menu Frame
+local menuFrame = Instance.new("Frame")
+menuFrame.Parent = screenGui
+menuFrame.Size = UDim2.new(0, 400, 0, 300)
+menuFrame.Position = UDim2.new(0.5, -200, 0.5, -150)
+menuFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 255) -- Blue background color
+menuFrame.Visible = false -- Initially hidden
+
+-- Title for the menu
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Parent = menuFrame
+titleLabel.Size = UDim2.new(1, 0, 0, 50)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "AlphaWolf Menu"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 24
+titleLabel.TextAlignment = Enum.TextAlignment.Center
+
+-- ESP Button
+local espButton = Instance.new("TextButton")
+espButton.Parent = menuFrame
+espButton.Size = UDim2.new(0, 200, 0, 50)
+espButton.Position = UDim2.new(0.5, -100, 0, 60)
+espButton.Text = "Toggle ESP"
+espButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+espButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+espButton.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    print("ESP: " .. (espEnabled and "Enabled" or "Disabled"))
+end)
+
+-- Triggerbot Button
+local triggerbotButton = Instance.new("TextButton")
+triggerbotButton.Parent = menuFrame
+triggerbotButton.Size = UDim2.new(0, 200, 0, 50)
+triggerbotButton.Position = UDim2.new(0.5, -100, 0, 120)
+triggerbotButton.Text = "Toggle Triggerbot"
+triggerbotButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+triggerbotButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+triggerbotButton.MouseButton1Click:Connect(function()
+    triggerbotEnabled = not triggerbotEnabled
+    print("Triggerbot: " .. (triggerbotEnabled and "Enabled" or "Disabled"))
+end)
+
+-- Aimbot Button
+local aimbotButton = Instance.new("TextButton")
+aimbotButton.Parent = menuFrame
+aimbotButton.Size = UDim2.new(0, 200, 0, 50)
+aimbotButton.Position = UDim2.new(0.5, -100, 0, 180)
+aimbotButton.Text = "Toggle Aimbot"
+aimbotButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+aimbotButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+aimbotButton.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+    print("Aimbot: " .. (aimbotEnabled and "Enabled" or "Disabled"))
+end)
+
+-- Help Button
+local helpButton = Instance.new("TextButton")
+helpButton.Parent = menuFrame
+helpButton.Size = UDim2.new(0, 200, 0, 50)
+helpButton.Position = UDim2.new(0.5, -100, 0, 240)
+helpButton.Text = "Show Help"
+helpButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+helpButton.BackgroundColor3 = Color3.fromRGB(255, 255, 0) -- Yellow for Help
+helpButton.MouseButton1Click:Connect(function()
+    -- Toggle the visibility of the ESP, Triggerbot, and Aimbot buttons
+    espButton.Visible = not espButton.Visible
+    triggerbotButton.Visible = not triggerbotButton.Visible
+    aimbotButton.Visible = not aimbotButton.Visible
+    print("Help Menu: " .. (espButton.Visible and "Shown" or "Hidden"))
+end)
+
+-- HBE (Hitbox Expansion) Button
+local hbeButton = Instance.new("TextButton")
+hbeButton.Parent = menuFrame
+hbeButton.Size = UDim2.new(0, 200, 0, 50)
+hbeButton.Position = UDim2.new(0.5, -100, 0, 300)
+hbeButton.Text = "Toggle HBE"
+hbeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+hbeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Red for HBE
+local hbeEnabled = false
+local hbePart = nil
+
+-- Create the HBE Hitbox (Initially Invisible)
+local function createHBE()
+    if hbePart then
+        hbePart:Destroy()
+    end
+    hbePart = Instance.new("Part")
+    hbePart.Parent = player.Character
+    hbePart.Size = Vector3.new(2, 2, 2) -- Default hitbox size
+    hbePart.Position = player.Character.HumanoidRootPart.Position
+    hbePart.Anchored = true
+    hbePart.CanCollide = false
+    hbePart.Color = Color3.fromRGB(255, 0, 0) -- Red color
+    hbePart.Transparency = 0.5
+    hbePart.Name = "HBEHitbox"
+end
+
+-- Toggle HBE On/Off
+hbeButton.MouseButton1Click:Connect(function()
+    hbeEnabled = not hbeEnabled
+    if hbeEnabled then
+        createHBE() -- Create the hitbox when enabled
+        print("HBE: Enabled")
+    else
+        if hbePart then
+            hbePart:Destroy() -- Destroy hitbox when disabled
+        end
+        print("HBE: Disabled")
+    end
+end)
+
+-- Toggle Menu with F8 key
+userInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+
+    if input.KeyCode == Enum.KeyCode.F8 then
+        menuFrame.Visible = not menuFrame.Visible
+    end
+end)
+
+-- Triggerbot Logic (Works on Any Body Part in Range)
+local function triggerBot()
+    if triggerbotEnabled then
+        for _, targetPlayer in ipairs(game.Players:GetPlayers()) do
+            if targetPlayer ~= player and targetPlayer.Character then
+                -- Iterate over all body parts in the character
+                for _, bodyPart in pairs(targetPlayer.Character:GetChildren()) do
+                    if bodyPart:IsA("BasePart") then
+                        local distance = (workspace.CurrentCamera.CFrame.Position - bodyPart.Position).Magnitude
+
+                        if distance < 50 then  -- Set the range for triggerbot to fire at
+                            local direction = (bodyPart.Position - workspace.CurrentCamera.CFrame.Position).unit
+                            local ray = Ray.new(workspace.CurrentCamera.CFrame.Position, direction * distance)
+                            local hit, hitPosition = workspace:FindPartOnRay(ray, player.Character)
+
+                            -- If the ray hits any body part of the player, it will automatically fire
+                            if hit and hit.Parent == targetPlayer.Character then
+                                -- Instant triggerbot: Perform the action immediately
+                                print("Triggerbot fired at " .. targetPlayer.Name)
+                                -- Auto-fire code here, for example using the tool in the player's hand
+                                local tool = player.Character:FindFirstChildOfClass("Tool")
+                                if tool then
+                                    tool:Activate()
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- Aimbot Logic
+local function aimbot()
+    if aimbotEnabled then
+        local closestTarget = nil
+        local closestDistance = math.huge
+
+        -- Find the closest player to aim at
+        for _, targetPlayer in ipairs(game.Players:GetPlayers()) do
+            if targetPlayer ~= player and targetPlayer.Character and targetPlayer.Character:FindFirstChild("Head") then
+                local targetHead = targetPlayer.Character:FindFirstChild("Head")
+                local screenPos = workspace.CurrentCamera:WorldToScreenPoint(targetHead.Position)
+                local distance = (Vector2.new(screenPos.X, screenPos.Y) - Vector2.new(mouse.X, mouse.Y)).Magnitude
+
+                if distance < closestDistance then
+                    closestTarget = targetPlayer
+                    closestDistance = distance
+                end
+            end
+        end
+
+        -- If a target is found, move the mouse to the target's head position
+        if closestTarget then
+            local targetHead = closestTarget.Character:FindFirstChild("Head")
+            local screenPos = workspace.CurrentCamera:WorldToScreenPoint(targetHead.Position)
+            mouse.X = screenPos.X
+            mouse.Y = screenPos.Y
+        end
+    end
+end
+
+-- Continuously check for triggerbot and aimbot every frame
+game:GetService("RunService").RenderStepped:Connect(function()
+    triggerBot()  -- Instant triggerbot with no delay, checking all body parts
+    aimbot()      -- Aimbot
+end)
+
+-- Key binding for I to toggle help section visibility
+userInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+
+    if input.KeyCode == Enum.KeyCode.I then
+        -- Toggle the visibility of the help section (esp, triggerbot, aimbot buttons)
+        espButton.Visible = not espButton.Visible
+        triggerbotButton.Visible = not triggerbotButton.Visible
+        aimbotButton.Visible = not aimbotButton.Visible
+        print("Help Section: " .. (espButton.Visible and "Shown" or "Hidden"))
+    end
+end)
+
