@@ -1,0 +1,194 @@
+Copy
+-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+-- Player
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Triggerbot and ESP settings
+local triggerbotEnabled = false
+local espEnabled = false
+
+-- Create the UI with a Blue Night Sky theme
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ZoneyMenuUI"
+screenGui.Parent = playerGui
+
+-- Main frame with night sky background
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0.2, 0, 0.4, 0) -- Slightly taller for the new button
+frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+frame.AnchorPoint = Vector2.new(0.5, 0.5)
+frame.BackgroundColor3 = Color3.fromRGB(10, 20, 40) -- Dark blue background
+frame.BackgroundTransparency = 0.5
+frame.BorderSizePixel = 0
+frame.Visible = false -- Start hidden
+frame.Parent = screenGui
+
+-- Add a gradient to simulate the night sky
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 10, 30)), -- Darker at the top
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 40, 80)) -- Lighter at the bottom
+})
+gradient.Parent = frame
+
+-- Triggerbot button with night sky style
+local triggerbotButton = Instance.new("TextButton")
+triggerbotButton.Size = UDim2.new(0.8, 0, 0.3, 0)
+triggerbotButton.Position = UDim2.new(0.1, 0, 0.1, 0)
+triggerbotButton.BackgroundColor3 = Color3.fromRGB(30, 50, 90) -- Blue button
+triggerbotButton.Text = "Enable Triggerbot"
+triggerbotButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+triggerbotButton.Font = Enum.Font.SourceSansBold
+triggerbotButton.TextSize = 18
+triggerbotButton.Parent = frame
+
+-- ESP button with night sky style
+local espButton = Instance.new("TextButton")
+espButton.Size = UDim2.new(0.8, 0, 0.3, 0)
+espButton.Position = UDim2.new(0.1, 0, 0.5, 0)
+espButton.BackgroundColor3 = Color3.fromRGB(30, 50, 90) -- Blue button
+espButton.Text = "Enable ESP"
+espButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+espButton.Font = Enum.Font.SourceSansBold
+espButton.TextSize = 18
+espButton.Parent = frame
+
+-- Animation for the menu
+local function toggleMenu(visible)
+    if visible then
+        frame.Visible = true
+        local tween = TweenService:Create(frame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0.2, 0, 0.4, 0)})
+        tween:Play()
+    else
+        local tween = TweenService:Create(frame, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0.2, 0, 0, 0)})
+        tween:Play()
+        tween.Completed:Wait()
+        frame.Visible = false
+    end
+end
+
+-- Toggle menu with F8
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.F8 then
+        toggleMenu(not frame.Visible)
+    end
+end)
+
+-- Triggerbot functionality
+local function isPlayerVisible(player)
+    local character = player.Character
+    if not character then return false end
+
+    -- Get the player's position
+    local playerPart = character:FindFirstChildOfClass("Part") -- Any body part
+    if not playerPart then return false end
+
+    -- Raycast from the NPC to the player
+    local origin = workspace.CurrentCamera.CFrame.Position
+    local direction = (playerPart.Position - origin).Unit
+    local ray = Ray.new(origin, direction * 100)
+    local hit, position = workspace:FindPartOnRay(ray, player.Character)
+
+    -- Check if the ray hits the player
+    if hit and hit:IsDescendantOf(character) then
+        return true
+    end
+    return false
+end
+
+-- Function to toggle the triggerbot
+local function toggleTriggerbot()
+    triggerbotEnabled = not triggerbotEnabled
+    triggerbotButton.Text = triggerbotEnabled and "Disable Triggerbot" or "Enable Triggerbot"
+end
+
+-- Button click to toggle triggerbot
+triggerbotButton.MouseButton1Click:Connect(toggleTriggerbot)
+
+-- Toggle triggerbot with T
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.T then
+        toggleTriggerbot()
+    end
+end)
+
+-- ESP functionality
+local function addESP(player)
+    local character = player.Character
+    if not character then return end
+
+    -- Create a Highlight object for the player
+    local highlight = Instance.new("Highlight")
+    highlight.FillColor = Color3.fromRGB(255, 0, 0)
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillTransparency = 0.5
+    highlight.Parent = character
+end
+
+local function removeESP(player)
+    local character = player.Character
+    if not character then return end
+
+    -- Remove the Highlight object from the player
+    local highlight = character:FindFirstChild("Highlight")
+    if highlight then
+        highlight:Destroy()
+    end
+end
+
+-- Function to toggle the ESP
+local function toggleESP()
+    espEnabled = not espEnabled
+    espButton.Text = espEnabled and "Disable ESP" or "Enable ESP"
+
+    -- Add or remove ESP from all players
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= player then
+            if espEnabled then
+                addESP(player)
+            else
+                removeESP(player)
+            end
+        end
+    end
+end
+
+-- Button click to toggle ESP
+espButton.MouseButton1Click:Connect(toggleESP)
+
+-- Toggle ESP with G
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.G then
+        toggleESP()
+    end
+end)
+
+-- Handle new players joining the game
+Players.PlayerAdded:Connect(function(player)
+    if espEnabled then
+        player.CharacterAdded:Connect(function(character)
+            addESP(player)
+        end)
+    end
+end)
+
+-- Main triggerbot loop
+RunService.RenderStepped:Connect(function()
+    if triggerbotEnabled then
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= player and isPlayerVisible(player) then
+                -- Simulate shooting (this can be replaced with a custom function)
+                print("Zoney: Triggerbot Fired at " .. player.Name)
+            end
+        end
+    end
+end)
